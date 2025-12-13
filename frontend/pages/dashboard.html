@@ -1,0 +1,26 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<canvas id="status"></canvas>
+<canvas id="priority"></canvas>
+<ul id="rem"></ul>
+
+<script>
+const t=localStorage.getItem("token");
+
+fetch("http://localhost:5000/stats",{headers:{Authorization:"Bearer "+t}})
+.then(r=>r.json()).then(d=>{
+ new Chart(status,{type:"pie",
+ data:{labels:["Completed","Pending"],
+ datasets:[{data:[d.status.completed,d.status.pending]}]}
+});
+ new Chart(priority,{type:"bar",
+ data:{labels:["Low","Medium","High"],
+ datasets:[{data:[d.priority.Low,d.priority.Medium,d.priority.High]}]}
+});
+});
+
+fetch("http://localhost:5000/reminders",{headers:{Authorization:"Bearer "+t}})
+.then(r=>r.json()).then(d=>{
+ d.overdue.forEach(x=>rem.innerHTML+=`<li style=color:red>${x.title}</li>`);
+ d.today.forEach(x=>rem.innerHTML+=`<li>${x.title}</li>`);
+});
+</script>

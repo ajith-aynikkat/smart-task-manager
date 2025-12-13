@@ -1,0 +1,16 @@
+<input id="u" placeholder="username">
+<input id="p" type="password">
+<button onclick="login()">Login</button>
+
+<script>
+function login(){
+ fetch("http://localhost:5000/login",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({username:u.value,password:p.value})
+ }).then(r=>r.json()).then(d=>{
+  localStorage.setItem("token",d.access_token);
+  location.href="dashboard.html";
+ })
+}
+</script>
