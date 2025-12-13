@@ -1,17 +1,26 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    JWTManager, create_access_token,
+    jwt_required, get_jwt_identity
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_cors import CORS
+from sqlalchemy.exc import OperationalError
 from datetime import date, datetime
 import os
 import time
-from sqlalchemy.exc import OperationalError
-from flask_cors import CORS
+
+# -------------------
+# Flask App
+# -------------------
+app = Flask(__name__)
 CORS(app)
 
-app = Flask(__name__)
-
+# -------------------
+# Config
+# -------------------
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}"
     f"@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
@@ -19,9 +28,15 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# -------------------
+# Extensions
+# -------------------
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
+# -------------------
+# Models
+# -------------------
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
@@ -35,18 +50,9 @@ class Task(db.Model):
     due_date = db.Column(db.Date)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-
-@app.route("/register", methods=["POST"])
-def register():
-    data = request.json
-    user = User(
-        username=data["username"],
-        password=generate_password_hash(data["password"])
-    )
-    db.session.add(user)
-    db.session.commit()
-    return {"message": "User registered"}
-
+# -------------------
+# DB Init (Flask 3 safe)
+# -------------------
 def init_db():
     retries = 5
     while retries:
@@ -60,20 +66,36 @@ def init_db():
             print("Waiting for database...")
             time.sleep(3)
 
+# -------------------
+# Routes
+# -------------------
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.json
+    user = User(
+        username=data["username"],
+        password=generate_password_hash(data["password"])
+    )
+    db.session.add(user)
+    db.session.commit()
+    return {"message": "User registered"}
 
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
     user = User.query.filter_by(username=data["username"]).first()
+
     if user and check_password_hash(user.password, data["password"]):
         token = create_access_token(identity=str(user.id))
         return {"access_token": token}
+
     return {"error": "Invalid credentials"}, 401
 
 @app.route("/tasks", methods=["GET", "POST"])
 @jwt_required()
 def tasks():
     user_id = int(get_jwt_identity())
+
     if request.method == "POST":
         data = request.json
         task = Task(
@@ -87,21 +109,26 @@ def tasks():
         return {"message": "Task created"}
 
     tasks = Task.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": t.id,
-        "title": t.title,
-        "status": t.status,
-        "priority": t.priority,
-        "due_date": t.due_date.isoformat()
-    } for t in tasks])
+    return jsonify([
+        {
+            "id": t.id,
+            "title": t.title,
+            "status": t.status,
+            "priority": t.priority,
+            "due_date": t.due_date.isoformat()
+        }
+        for t in tasks
+    ])
 
 @app.route("/tasks/<int:id>/complete", methods=["PUT"])
 @jwt_required()
 def complete_task(id):
     user_id = int(get_jwt_identity())
     task = Task.query.filter_by(id=id, user_id=user_id).first()
+
     if not task:
         return {"error": "Not found"}, 404
+
     task.status = "Completed"
     db.session.commit()
     return {"message": "Completed"}
@@ -110,6 +137,7 @@ def complete_task(id):
 @jwt_required()
 def stats():
     user_id = int(get_jwt_identity())
+
     total = Task.query.filter_by(user_id=user_id).count()
     completed = Task.query.filter_by(user_id=user_id, status="Completed").count()
     pending = total - completed
@@ -128,15 +156,33 @@ def stats():
 def reminders():
     user_id = int(get_jwt_identity())
     today = date.today()
-    overdue = Task.query.filter(Task.user_id==user_id, Task.status!="Completed", Task.due_date < today).all()
-    today_tasks = Task.query.filter(Task.user_id==user_id, Task.status!="Completed", Task.due_date == today).all()
+
+    overdue = Task.query.filter(
+        Task.user_id == user_id,
+        Task.status != "Completed",
+        Task.due_date < today
+    ).all()
+
+    today_tasks = Task.query.filter(
+        Task.user_id == user_id,
+        Task.status != "Completed",
+        Task.due_date == today
+    ).all()
+
     return {
         "overdue": [{"title": t.title} for t in overdue],
         "today": [{"title": t.title} for t in today_tasks]
     }
 
+# -------------------
+# Scheduler
+# -------------------
 def reminder_job():
-    overdue = Task.query.filter(Task.status!="Completed", Task.due_date < date.today()).count()
+    overdue = Task.query.filter(
+        Task.status != "Completed",
+        Task.due_date < date.today()
+    ).count()
+
     if overdue > 0:
         print(f"[REMINDER] {overdue} overdue tasks")
 
@@ -144,5 +190,8 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(reminder_job, "interval", hours=24)
 scheduler.start()
 
+# -------------------
+# App Start
+# -------------------
 init_db()
 app.run(host="0.0.0.0", port=5000)
