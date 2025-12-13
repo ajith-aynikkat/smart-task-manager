@@ -71,7 +71,7 @@ def login():
 @app.route("/tasks", methods=["GET", "POST"])
 @jwt_required()
 def tasks():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     if request.method == "POST":
         data = request.json
         task = Task(
@@ -96,7 +96,7 @@ def tasks():
 @app.route("/tasks/<int:id>/complete", methods=["PUT"])
 @jwt_required()
 def complete_task(id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     task = Task.query.filter_by(id=id, user_id=user_id).first()
     if not task:
         return {"error": "Not found"}, 404
@@ -107,7 +107,7 @@ def complete_task(id):
 @app.route("/stats")
 @jwt_required()
 def stats():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     total = Task.query.filter_by(user_id=user_id).count()
     completed = Task.query.filter_by(user_id=user_id, status="Completed").count()
     pending = total - completed
@@ -124,7 +124,7 @@ def stats():
 @app.route("/reminders")
 @jwt_required()
 def reminders():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     today = date.today()
     overdue = Task.query.filter(Task.user_id==user_id, Task.status!="Completed", Task.due_date < today).all()
     today_tasks = Task.query.filter(Task.user_id==user_id, Task.status!="Completed", Task.due_date == today).all()
