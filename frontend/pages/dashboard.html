@@ -6,7 +6,7 @@
 <script>
 const t=localStorage.getItem("token");
 
-fetch("http://localhost:5000/stats",{headers:{Authorization:"Bearer "+t}})
+fetch("/api/stats",{headers:{Authorization:"Bearer "+t}})
 .then(r=>r.json()).then(d=>{
  new Chart(status,{type:"pie",
  data:{labels:["Completed","Pending"],
@@ -18,7 +18,7 @@ fetch("http://localhost:5000/stats",{headers:{Authorization:"Bearer "+t}})
 });
 });
 
-fetch("http://localhost:5000/reminders",{headers:{Authorization:"Bearer "+t}})
+fetch("/api/reminders",{headers:{Authorization:"Bearer "+t}})
 .then(r=>r.json()).then(d=>{
  d.overdue.forEach(x=>rem.innerHTML+=`<li style=color:red>${x.title}</li>`);
  d.today.forEach(x=>rem.innerHTML+=`<li>${x.title}</li>`);

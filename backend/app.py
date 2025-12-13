@@ -7,6 +7,8 @@ from datetime import date, datetime
 import os
 import time
 from sqlalchemy.exc import OperationalError
+from flask_cors import CORS
+CORS(app)
 
 app = Flask(__name__)
 
