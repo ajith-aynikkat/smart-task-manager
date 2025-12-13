@@ -33,17 +33,6 @@ class Task(db.Model):
     due_date = db.Column(db.Date)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-@app.before_first_request
-def create_tables():
-    retries = 5
-    while retries:
-        try:
-            db.create_all()
-            break
-        except OperationalError:
-            retries -= 1
-            print("Waiting for database...")
-            time.sleep(3)
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -55,6 +44,20 @@ def register():
     db.session.add(user)
     db.session.commit()
     return {"message": "User registered"}
+
+def init_db():
+    retries = 5
+    while retries:
+        try:
+            with app.app_context():
+                db.create_all()
+            print("Database initialized")
+            break
+        except OperationalError:
+            retries -= 1
+            print("Waiting for database...")
+            time.sleep(3)
+
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -139,4 +142,5 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(reminder_job, "interval", hours=24)
 scheduler.start()
 
+init_db()
 app.run(host="0.0.0.0", port=5000)
