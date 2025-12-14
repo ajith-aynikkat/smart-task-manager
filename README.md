@@ -49,6 +49,7 @@ smart-task-manager/
 ├── docker-compose.yml
 ├── Jenkinsfile
 └── README.md
+```
 
 ---
 
