@@ -87,7 +87,7 @@ node_modules/
 
 ### 4️⃣ Create Environment Template
 ```bash
-nano .env.example
+nano .env
 ```
 
 ```env
