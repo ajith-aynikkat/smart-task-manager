@@ -4,39 +4,6 @@ This repository documents a **complete DevOps lifecycle** starting from local de
 
 ---
 
-## 📌 Project Objectives
-
-- Create a structured application
-- Secure secrets using `.env`
-- Containerize using Docker
-- Deploy using Docker Compose
-- Automate build & deployment using Jenkins
-- Trigger deployment automatically on Git push
-
----
-## 📐 Project Architecture
-                         ┌────────────────────┐
-                        │      End User       │
-                        └─────────┬──────────┘
-                                  │ HTTP Request
-                        ┌─────────▼──────────┐
-                        │  Nginx Reverse Proxy│
-                        │  (Routing Layer)   │
-                        └─────────┬──────────┘
-                  Static Content   │    REST API Calls
-            ┌─────────────────────▼──┐   ┌──────────────────┐
-            │     Frontend Service    │   │  Backend Service │
-            │   (HTML / JS / Nginx)   │   │   (Flask API)    │
-            │   Docker Container      │   │ Docker Container │
-            └──────────────┬─────────┘   └────────┬─────────┘
-                           │                      │
-                           │                      │
-                   ┌───────▼────────┐    ┌────────▼─────────┐
-                   │   Cache Layer   │    │    Database      │
-                   │     (Redis)     │    │  PostgreSQL DB   │
-                   │ Docker Container│    │ Persistent Vol  │
-                   └────────────────┘    └──────────────────┘
-
 
 ## 🛠️ Tech Stack Used
 
