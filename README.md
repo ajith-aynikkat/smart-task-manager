@@ -4,7 +4,6 @@ This repository documents a **complete DevOps lifecycle** starting from local de
 
 ---
 
-
 ## 🛠️ Tech Stack Used
 
 - Git & GitHub
@@ -15,6 +14,36 @@ This repository documents a **complete DevOps lifecycle** starting from local de
 - Environment variables (`.env`)
 
 ---
+## 📐 Project Architecture
+
+                ┌──────────────┐
+                │   End User   │
+                │   (Browser)  │
+                └──────┬───────┘
+                       │
+                       │ HTTP (Port 80)
+                       ▼
+              ┌────────────────────┐
+              │  Frontend (Nginx)  │
+              │ Static UI + Charts │
+              │ Reverse Proxy (/api)
+              └──────┬─────────────┘
+                     │ Internal Docker Network
+                     │ (/api → backend)
+                     ▼
+              ┌────────────────────┐
+              │ Backend (Flask API)│
+              │ Auth, Tasks, Stats │
+              │ JWT-secured APIs   │
+              └──────┬─────────────┘
+                     │
+                     │ SQLAlchemy
+                     ▼
+              ┌────────────────────┐
+              │ PostgreSQL Database│
+              │ Persistent Storage │
+              └────────────────────┘
+
 
 ## 📁 Project Structure
 
